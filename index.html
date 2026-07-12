@@ -230,10 +230,11 @@
   .outfit.activo figcaption{color:var(--burgundy);}
   .hint{font-size:0.82rem; color:var(--sage); font-style:italic; letter-spacing:0;}
   .outfit-panel{
-    display:none; max-width:820px; margin:26px auto 0;
+    display:none; width:100%; max-width:820px; margin:26px auto 0;
     grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:18px;
     background:white; border:1px solid var(--sage); padding:26px 22px;
     animation:panelEntra 0.35s ease;
+    box-sizing:border-box;
   }
   .outfit-panel.abierto{display:grid;}
   @keyframes panelEntra{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
@@ -363,7 +364,7 @@
   <svg class="flourish" width="120" height="30" viewBox="0 0 120 30"><path d="M10,15 C30,0 50,30 60,15 C70,0 90,30 110,15" stroke="#8B9574" stroke-width="1.5" fill="none"/></svg>
   <h2 class="reveal">Código de vestimenta</h2>
   <div class="linea"></div>
-  <p class="vestimenta-intro reveal">Formal / Cocktail · Se sugiere evitar el color blanco<br><span class="hint">Toca cada tarjeta para ver ejemplos</span></p>
+  <p class="vestimenta-intro reveal">No usar colores blancos o claros como beige, hueso, etc.<br><span class="hint">Toca cada tarjeta para ver ejemplos</span></p>
   <div class="outfits">
 
     <figure class="outfit reveal" data-panel="panelEllos" role="button" tabindex="0" aria-expanded="false">
@@ -540,6 +541,7 @@ const observer = new IntersectionObserver((entries)=>{
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
 // ---------- Acordeón de código de vestimenta ----------
+const vestimentaSection = document.querySelector('.vestimenta');
 document.querySelectorAll('.outfit[data-panel]').forEach(card=>{
   const badge = card.querySelector('.tap-badge');
   const abrir = ()=>{
@@ -553,6 +555,13 @@ document.querySelectorAll('.outfit[data-panel]').forEach(card=>{
       if(b) b.textContent = 'Ver ejemplos ▸';
     });
     if(!yaAbierto){
+      // En celular (una tarjeta por fila) el panel se mueve justo debajo de la tarjeta tocada.
+      // En computadora (las 3 en una fila) se mantiene al final, debajo de toda la fila.
+      if(window.matchMedia('(max-width:600px)').matches){
+        card.insertAdjacentElement('afterend', panel);
+      } else {
+        vestimentaSection.appendChild(panel);
+      }
       panel.classList.add('abierto');
       card.classList.add('activo');
       card.setAttribute('aria-expanded','true');
@@ -674,9 +683,10 @@ function cargarTrack(i, autoplay){
 cargarTrack(trackIndex, false);
 
 // ---------- Auto-inicio: la música arranca con la primera interacción confiable del invitado ----------
-// Los navegadores solo permiten iniciar audio tras un clic, tecla o toque real (política de seguridad,
-// no se puede evitar). El scroll con rueda del mouse no siempre cuenta como interacción válida, pero
-// lo dejamos como intento adicional sin que bloquee los disparadores confiables si falla.
+// Los navegadores solo permiten iniciar audio tras un gesto real (política de seguridad, no se puede
+// evitar). iOS/Safari es permisivo con casi cualquier toque; Android/Chrome es más estricto y a veces
+// solo acepta 'click' o 'touchend' como gesto válido — por eso se incluyen varios tipos de disparador.
+const EVENTOS_AUTOPLAY = ['pointerdown','touchstart','touchend','click','keydown','scroll'];
 function iniciarMusicaAuto(){
   if(sonando) return;
   audio.play().then(()=>{
@@ -686,11 +696,9 @@ function iniciarMusicaAuto(){
   }).catch(()=>{ /* intento fallido: se mantienen los listeners activos para reintentar */ });
 }
 function quitarListenersAuto(){
-  ['pointerdown','touchstart','keydown','scroll'].forEach(ev=>
-    window.removeEventListener(ev, iniciarMusicaAuto)
-  );
+  EVENTOS_AUTOPLAY.forEach(ev => window.removeEventListener(ev, iniciarMusicaAuto));
 }
-['pointerdown','touchstart','keydown','scroll'].forEach(ev=>
+EVENTOS_AUTOPLAY.forEach(ev =>
   window.addEventListener(ev, iniciarMusicaAuto, {once:false, passive:true})
 );
 
