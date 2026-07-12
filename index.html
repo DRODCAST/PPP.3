@@ -46,40 +46,50 @@
   .player{
     position:fixed; bottom:22px; right:22px; z-index:500;
     background:var(--navy); border:1px solid var(--terracota);
-    border-radius:14px; padding:10px 14px;
-    display:flex; align-items:center; gap:10px;
+    border-radius:12px; padding:10px; width:130px;
     box-shadow:0 8px 22px rgba(0,0,0,0.35);
-    max-width:290px;
   }
   .player .cover{
-    width:40px; height:40px; border-radius:8px; flex-shrink:0;
+    width:100%; aspect-ratio:1; border-radius:8px;
     background:var(--burgundy); display:flex; align-items:center; justify-content:center;
-    font-size:1.1rem; color:var(--terracota); overflow:hidden;
+    font-size:1.6rem; color:var(--terracota); overflow:hidden; margin-bottom:8px;
   }
   .player .cover img{width:100%; height:100%; object-fit:cover;}
-  .player .info{
-    display:none; flex-direction:column; overflow:hidden; margin-right:2px;
+  .player .track-title{
+    color:var(--marfil); font-size:0.7rem; font-weight:600; text-align:center;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:8px;
   }
-  .player .info .track-title{
-    color:var(--marfil); font-size:0.75rem; font-weight:600; white-space:nowrap;
-    overflow:hidden; text-overflow:ellipsis; max-width:110px;
-  }
-  .player .controls{display:flex; align-items:center; gap:6px;}
+  .player .controls-row{display:flex; align-items:center; justify-content:space-between;}
   .player button{
     background:none; border:none; color:var(--marfil); cursor:pointer;
     display:flex; align-items:center; justify-content:center;
-    width:28px; height:28px; font-size:0.9rem; border-radius:50%;
+    width:26px; height:26px; font-size:0.85rem; border-radius:50%;
     transition:background 0.15s;
   }
   .player button:hover{background:rgba(255,255,255,0.08);}
   .player .play-pause{
-    width:38px; height:38px; background:var(--terracota); color:var(--navy); font-size:1rem;
+    width:34px; height:34px; background:var(--terracota); color:var(--navy); font-size:0.9rem;
   }
   .player .play-pause:hover{background:var(--rust);}
-  .player .vol-group{display:flex; flex-direction:column; gap:0;}
-  .player .vol-group button{width:22px; height:18px; font-size:0.65rem;}
-  @media (min-width:480px){
-    .player .info{display:flex;}
+  .vol-wrapper{position:relative;}
+  .vol-popup{
+    position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+    background:var(--navy); border:1px solid var(--terracota); border-radius:8px;
+    width:32px; height:96px; display:none; align-items:center; justify-content:center;
+  }
+  .vol-wrapper:hover .vol-popup{display:flex;}
+  .vol-slider{
+    -webkit-appearance:none; appearance:none;
+    width:80px; height:4px; background:var(--terracota); border-radius:2px;
+    transform:rotate(-90deg); cursor:pointer;
+  }
+  .vol-slider::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--marfil); border:1px solid var(--terracota); cursor:pointer;
+  }
+  .vol-slider::-moz-range-thumb{
+    width:12px; height:12px; border-radius:50%;
+    background:var(--marfil); border:1px solid var(--terracota); cursor:pointer;
   }
 
   section{padding:100px 20px; text-align:center; position:relative;}
@@ -195,13 +205,13 @@
 
 <div class="player">
   <div class="cover" id="playerCover">🎵</div>
-  <div class="info">
-    <span class="track-title" id="playerTitle">Toca play</span>
-  </div>
-  <div class="controls">
-    <div class="vol-group">
-      <button id="volUp" aria-label="Subir volumen">▲</button>
-      <button id="volDown" aria-label="Bajar volumen">▼</button>
+  <div class="track-title" id="playerTitle">Toca play</div>
+  <div class="controls-row">
+    <div class="vol-wrapper">
+      <button id="volBtn" aria-label="Silenciar">🔊</button>
+      <div class="vol-popup">
+        <input type="range" id="volSlider" class="vol-slider" min="0" max="100" value="60">
+      </div>
     </div>
     <button class="play-pause" id="playPauseBtn" aria-label="Reproducir">▶</button>
     <button id="nextBtn" aria-label="Siguiente canción">⏭</button>
@@ -229,8 +239,8 @@
     <div class="card reveal">
       <div class="icono">✦</div>
       <h3>Ceremonia</h3>
-      <p>1:00 pm<br>Parroquia de Ejemplo<br>Calle Falsa 123, Zapopan</p>
-      <a class="btn" href="https://maps.google.com" target="_blank" rel="noopener">Cómo llegar</a>
+      <p>1:00 pm<br>Templo del Padre Galván<br>Calle Hospital 28, Barrio El Retiro, Guadalajara</p>
+      <a class="btn" href="https://maps.app.goo.gl/zqKh7Y69ssy5E5sc8" target="_blank" rel="noopener">Cómo llegar</a>
     </div>
     <div class="card reveal">
       <div class="icono">✦</div>
@@ -241,7 +251,8 @@
     <div class="card reveal">
       <div class="icono">✦</div>
       <h3>Código de vestimenta</h3>
-      <p>Formal · Paleta otoñal<br>Navy, burgundy, terracota, rust, sage</p>
+      <p>Formal / Cocktail<br>Se sugiere evitar el color blanco</p>
+      <a class="btn" href="https://www.labastilla.com/blog/codigo-vestimenta-dress-code-boda-2025" target="_blank" rel="noopener">Ver ejemplos de outfits</a>
     </div>
   </div>
 </section>
@@ -331,12 +342,13 @@ let sonando = false;
 const audio = document.getElementById('bgMusic');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const nextBtn = document.getElementById('nextBtn');
-const volUp = document.getElementById('volUp');
-const volDown = document.getElementById('volDown');
+const volBtn = document.getElementById('volBtn');
+const volSlider = document.getElementById('volSlider');
 const cover = document.getElementById('playerCover');
 const titleEl = document.getElementById('playerTitle');
 
 audio.volume = 0.6;
+let volumenPrevio = 0.6;
 
 function cargarTrack(i, autoplay){
   const track = playlist[i];
@@ -372,11 +384,26 @@ nextBtn.addEventListener('click', ()=>{
   cargarTrack(trackIndex, true);
 });
 
-volUp.addEventListener('click', ()=>{
-  audio.volume = Math.min(1, Math.round((audio.volume + 0.1) * 10) / 10);
+// ---------- Volumen tipo computadora: slider vertical al pasar el mouse, clic en bocina para silenciar ----------
+volSlider.addEventListener('input', ()=>{
+  const val = volSlider.value / 100;
+  audio.volume = val;
+  audio.muted = false;
+  volBtn.textContent = val == 0 ? '🔇' : '🔊';
 });
-volDown.addEventListener('click', ()=>{
-  audio.volume = Math.max(0, Math.round((audio.volume - 0.1) * 10) / 10);
+
+volBtn.addEventListener('click', ()=>{
+  if(audio.muted || audio.volume === 0){
+    audio.muted = false;
+    audio.volume = volumenPrevio || 0.6;
+    volSlider.value = Math.round(audio.volume * 100);
+    volBtn.textContent = '🔊';
+  } else {
+    volumenPrevio = audio.volume;
+    audio.muted = true;
+    volSlider.value = 0;
+    volBtn.textContent = '🔇';
+  }
 });
 
 audio.addEventListener('ended', ()=>{
